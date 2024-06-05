@@ -9,8 +9,6 @@ k_B = 1  # Boltzmann constant
 n_steps = 10000  # Number of Monte Carlo steps
 
 # Function to calculate energy
-
-
 def calc_energy(config):
     energy = 0
     for i in range(L):
@@ -22,14 +20,10 @@ def calc_energy(config):
     return energy / 2  # Each pair counted twice
 
 # Function to calculate magnetization
-
-
 def calc_magnetization(config):
     return np.sum(config)
 
 # Metropolis algorithm
-
-
 def metropolis(config, beta):
     for i in range(L):
         for j in range(L):
@@ -52,22 +46,16 @@ def metropolis(config, beta):
     return config
 
 # Create initial configuration
-
-
 def initialize_spins(L):
     return np.random.choice([1, -1], size=(L, L))
 
 # Function to update the frame for animation
-
-
 def update(frame, config, im, beta):
     metropolis(config, beta)
     im.set_array(config)
     return im,
 
 # Main function to create and save the animation
-
-
 def animate_ising(temperatures, n_frames, save_path):
     fig, ax = plt.subplots()
     config = initialize_spins(L)
