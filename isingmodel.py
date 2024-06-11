@@ -8,8 +8,6 @@ J = 1  # Interaction strength
 k_B = 1  # Boltzmann constant
 
 # Function to calculate energy
-
-
 def calc_energy(config):
     energy = 0
     for i in range(L):
@@ -21,14 +19,10 @@ def calc_energy(config):
     return energy / 2  # Each pair counted twice
 
 # Function to calculate magnetization
-
-
 def calc_magnetization(config):
     return np.sum(config)
 
 # Metropolis algorithm
-
-
 def metropolis(config, beta):
     for _ in range(L**2):  # Attempt as many updates as there are spins
         x = np.random.randint(0, L)
@@ -42,14 +36,11 @@ def metropolis(config, beta):
     return config
 
 # Create initial configuration
-
-
 def initialize_spins(L):
     return np.random.choice([1, -1], size=(L, L))
 
+
 # Update the frame for animation
-
-
 def update_temp(frame, config, im, temperatures, n_frames):
     if frame < n_frames / 3:
         beta = 1 / temperatures[0]
@@ -65,13 +56,14 @@ def update_temp(frame, config, im, temperatures, n_frames):
         else:
             # Use second temp if only one provided
             beta = 1 / temperatures[0]
+
+# Function to update the frame for animation
+def update(frame, config, im, beta):
     metropolis(config, beta)
     im.set_array(config)
     return im,
 
 # Create and save the animation
-
-
 def animate_ising(temperatures, n_frames, save_path):
     fig, ax = plt.subplots()
     config = initialize_spins(L)
