@@ -6,7 +6,6 @@ import matplotlib.animation as animation
 L = 50  # Linear size of the grid
 J = 1  # Interaction strength
 k_B = 1  # Boltzmann constant
-n_steps = 10000  # Number of Monte Carlo steps
 
 # Function to calculate energy
 
@@ -31,24 +30,15 @@ def calc_magnetization(config):
 
 
 def metropolis(config, beta):
-    for i in range(L):
-        for j in range(L):
-            x = np.random.randint(0, L)
-            y = np.random.randint(0, L)
-            S = config[x, y]
-            neighbors = config[(x+1) % L, y] + config[x, (y+1) %
-                                                      L] + config[(x-1) % L, y] + config[x, (y-1) % L]
-            '''
-            dE = 2 * S * neighbors
-            if dE < 0:
-                S *= -1
-            elif np.random.rand() < np.exp(-dE * beta):
-                S *= -1
-            config[x, y] = S
-            '''
-            dE = 2 * S * neighbors
-            if dE < 0 or np.random.rand() < np.exp(-dE * beta):
-                config[x, y] *= -1
+    for _ in range(L**2):  # Attempt as many updates as there are spins
+        x = np.random.randint(0, L)
+        y = np.random.randint(0, L)
+        S = config[x, y]
+        neighbors = config[(x+1) % L, y] + config[x, (y+1) %
+                                                  L] + config[(x-1) % L, y] + config[x, (y-1) % L]
+        dE = 2 * S * neighbors
+        if dE < 0 or np.random.rand() < np.exp(-dE * beta):
+            config[x, y] *= -1
     return config
 
 # Create initial configuration
@@ -57,47 +47,55 @@ def metropolis(config, beta):
 def initialize_spins(L):
     return np.random.choice([1, -1], size=(L, L))
 
-# Function to update the frame for animation
+# Update the frame for animation
 
 
-def update(frame, config, im, beta):
+def update_temp(frame, config, im, temperatures, n_frames):
+    if frame < n_frames / 3:
+        beta = 1 / temperatures[0]
+    elif frame < 2 * n_frames / 3:
+        if len(temperatures) > 1:
+            beta = 1 / temperatures[1]
+        else:
+            # Use first temp if only one provided
+            beta = 1 / temperatures[0]
+    else:
+        if len(temperatures) > 2:
+            beta = 1 / temperatures[2]
+        else:
+            # Use second temp if only one provided
+            beta = 1 / temperatures[0]
     metropolis(config, beta)
     im.set_array(config)
     return im,
 
-# Main function to create and save the animation
+# Create and save the animation
 
 
 def animate_ising(temperatures, n_frames, save_path):
     fig, ax = plt.subplots()
     config = initialize_spins(L)
     im = ax.imshow(config, animated=True, cmap='coolwarm')
-    ani = animation.FuncAnimation(fig, update, frames=n_frames, fargs=(
-        config, im, 1/temperatures[0]), interval=100, repeat=False)
 
-    # Update temperature for each phase of the animation
-    def update_temp(frame, config, im):
-        if frame < n_frames / 3:
-            beta = 1 / temperatures[0]
-        elif frame < 2 * n_frames / 3:
-            beta = 1 / temperatures[1]
-        else:
-            beta = 1 / temperatures[2]
-        metropolis(config, beta)
-        im.set_array(config)
-        return im,
+    ani = animation.FuncAnimation(
+        fig, update_temp, frames=n_frames,
+        fargs=(config, im, temperatures, n_frames), interval=100, repeat=False
+    )
 
-    ani = animation.FuncAnimation(fig, update_temp, frames=n_frames, fargs=(
-        config, im), interval=100, repeat=False)
-    ani.save(save_path, writer='imagemagick')
-    plt.show()
+    # pillow writer instead of imagemagick
+    ani.save(save_path, writer='pillow')
+    plt.show(block=True)
 
 
 # Parameters for animation
-# Below, at, and above the critical temperature
-temperatures = [5.0, 2.27, 1.0]
+temperature_sets = [
+    ([5.0, 2.27, 1.0], 'ising_model.gif'),
+    ([5.0], 'ising_model_5.gif'),
+    ([2.27], 'ising_model_2.27.gif'),
+    ([1.0], 'ising_model_1.gif')
+]
 n_frames = 300
-save_path = 'ising_model.gif'
 
-# Run the animation
-animate_ising(temperatures, n_frames, save_path)
+# Run the animation for each temperature set
+for temperatures, save_path in temperature_sets:
+    animate_ising(temperatures, n_frames, save_path)
